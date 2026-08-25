@@ -1,0 +1,38 @@
+import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
+
+export type Role = "student" | "ict" | "maintenance" | "security" | "administrator";
+export type Team = "ICT" | "Physical Maintenance" | "Security";
+export type Category = "ICT" | "Plumbing" | "Electrical" | "Building" | "Cleaning" | "Security";
+export type Status = "Submitted" | "Assigned" | "In Progress" | "Resolved";
+export type Priority = "Low" | "Medium" | "High" | "Urgent";
+export type Activity = { id: string; action: string; author: string; time: string; note?: string };
+export type Request = { id: string; title: string; category: Category; location: string; description: string; priority: Priority; status: Status; reporter: string; team: Team; assignee?: string; time: string; activity: Activity[] };
+export const roles: Record<Role, { label: string; summary: string; initials: string; team?: Team; name: string }> = {
+  student: { label: "Student", summary: "Report campus issues and follow every update.", initials: "ST", name: "Amara N." },
+  ict: { label: "ICT Technician", summary: "Diagnose and resolve technology requests assigned to ICT.", initials: "IT", team: "ICT", name: "Jordan M." },
+  maintenance: { label: "Physical-Maintenance Technician", summary: "Handle facilities, plumbing, electrical, and building work.", initials: "PM", team: "Physical Maintenance", name: "Thabo K." },
+  security: { label: "Security Officer", summary: "Acknowledge, manage, and document safety incidents.", initials: "SO", team: "Security", name: "Nandi S." },
+  administrator: { label: "Administrator", summary: "Oversee requests, routing, workload, and service quality.", initials: "AD", name: "Campus Administrator" },
+};
+const seed: Request[] = [
+  { id: "CM-2418", title: "Wi-Fi unavailable in Computer Lab 2", category: "ICT", location: "Technology Block · Computer Lab 2", description: "The classroom network is unavailable on all student workstations.", priority: "High", status: "Assigned", reporter: "Amara N.", team: "ICT", assignee: "Jordan M.", time: "Today, 09:10", activity: [{ id: "1", action: "Request submitted", author: "Amara N.", time: "Today, 08:34" }, { id: "2", action: "Assigned to ICT", author: "Campus Admin", time: "Today, 09:10", note: "Assigned to Jordan M." }] },
+  { id: "CM-2417", title: "Leaking tap in residence bathroom", category: "Plumbing", location: "Maple Residence · Room 106", description: "The basin tap continues to drip and the floor is becoming wet.", priority: "Medium", status: "In Progress", reporter: "Amara N.", team: "Physical Maintenance", assignee: "Thabo K.", time: "Today, 08:50", activity: [{ id: "3", action: "Request submitted", author: "Amara N.", time: "Yesterday, 16:18" }, { id: "4", action: "Work started", author: "Thabo K.", time: "Today, 08:50", note: "Replacement washer is being fitted." }] },
+  { id: "CM-2416", title: "Exterior light not working near library", category: "Electrical", location: "Central Library · South walkway", description: "The walkway light nearest the east entrance has been off since last night.", priority: "High", status: "Submitted", reporter: "Lebo R.", team: "Physical Maintenance", time: "Today, 07:55", activity: [{ id: "5", action: "Request submitted", author: "Lebo R.", time: "Today, 07:55" }] },
+  { id: "CM-2415", title: "Unsecured access door after hours", category: "Security", location: "Science Block · Rear entrance", description: "Rear access door was found open after the building closed.", priority: "Urgent", status: "Assigned", reporter: "Facilities Desk", team: "Security", assignee: "Nandi S.", time: "Today, 06:46", activity: [{ id: "6", action: "Security incident submitted", author: "Facilities Desk", time: "Today, 06:42" }, { id: "7", action: "Assigned to Security", author: "Campus Admin", time: "Today, 06:46", note: "High-priority attendance requested." }] },
+  { id: "CM-2414", title: "Projector cable replaced", category: "ICT", location: "Humanities Block · Lecture Hall 3", description: "The HDMI connection was damaged and has been replaced.", priority: "Low", status: "Resolved", reporter: "Professor Daniels", team: "ICT", assignee: "Jordan M.", time: "Yesterday, 11:20", activity: [{ id: "8", action: "Resolved", author: "Jordan M.", time: "Yesterday, 11:20", note: "New HDMI cable tested successfully." }] },
+];
+type Store = { role: Role; setRole: (v: Role) => void; requests: Request[]; visible: Request[]; create: (v: Pick<Request, "title" | "category" | "location" | "description" | "priority">) => string; assign: (id: string, team: Team) => void; status: (id: string, value: Status, note?: string) => void; note: (id: string, text: string) => void };
+const Context = createContext<Store | null>(null);
+export const teamFor = (category: Category): Team => category === "ICT" ? "ICT" : category === "Security" ? "Security" : "Physical Maintenance";
+export function MaintenanceProvider({ children }: { children: ReactNode }) {
+  const [role, setRole] = useState<Role>("student"); const [requests, setRequests] = useState(seed);
+  const actor = () => roles[role].name;
+  const patch = (id: string, f: (r: Request) => Request) => setRequests((all) => all.map((r) => r.id === id ? f(r) : r));
+  const create: Store["create"] = (v) => { const id = `CM-${2420 + requests.length}`; const entry: Request = { ...v, id, status: "Submitted", reporter: actor(), team: teamFor(v.category), time: "Just now", activity: [{ id: `${id}-new`, action: "Request submitted", author: actor(), time: "Just now" }] }; setRequests((all) => [entry, ...all]); return id; };
+  const assign: Store["assign"] = (id, team) => { const assignee = team === "ICT" ? "Jordan M." : team === "Security" ? "Nandi S." : "Thabo K."; patch(id, (r) => ({ ...r, team, assignee, status: "Assigned", time: "Just now", activity: [...r.activity, { id: `${id}-${Date.now()}`, action: `Assigned to ${team}`, author: "Campus Admin", time: "Just now", note: `Assigned to ${assignee}.` }] })); };
+  const status: Store["status"] = (id, value, note) => patch(id, (r) => ({ ...r, status: value, time: "Just now", activity: [...r.activity, { id: `${id}-${Date.now()}`, action: value === "In Progress" ? "Work started" : value === "Resolved" ? "Resolved" : `Status changed to ${value}`, author: actor(), time: "Just now", note }] }));
+  const note: Store["note"] = (id, text) => patch(id, (r) => ({ ...r, time: "Just now", activity: [...r.activity, { id: `${id}-${Date.now()}`, action: "Progress update", author: actor(), time: "Just now", note: text }] }));
+  const visible = useMemo(() => role === "administrator" ? requests : role === "student" ? requests.filter((r) => r.reporter === "Amara N.") : requests.filter((r) => r.team === roles[role].team), [requests, role]);
+  return <Context.Provider value={{ role, setRole, requests, visible, create, assign, status, note }}>{children}</Context.Provider>;
+}
+export const useMaintenance = () => { const v = useContext(Context); if (!v) throw new Error("MaintenanceProvider is missing"); return v; };
