@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { languageOptions, translations } from "../lib/i18n";
 import { roles, teamFor } from "../lib/maintenance-store";
 
 describe("Campus Maintenance role routing", () => {
@@ -16,5 +17,22 @@ describe("Campus Maintenance role routing", () => {
     expect(teamFor("Electrical")).toBe("Physical Maintenance");
     expect(teamFor("Building")).toBe("Physical Maintenance");
     expect(teamFor("Cleaning")).toBe("Physical Maintenance");
+  });
+});
+
+describe("Campus Maintenance language catalog", () => {
+  it("makes English, Shona, and Ndebele available", () => {
+    expect(languageOptions.map((option) => option.code)).toEqual(["en", "sn", "nd"]);
+  });
+
+  it("contains the core navigation and request actions in every supported language", () => {
+    for (const language of ["en", "sn", "nd"] as const) {
+      expect(translations[language].home).toBeTruthy();
+      expect(translations[language].requests).toBeTruthy();
+      expect(translations[language].reportIssue).toBeTruthy();
+      expect(translations[language].submitRequest).toBeTruthy();
+      expect(translations[language].resolved).toBeTruthy();
+      expect(translations[language].security).toBeTruthy();
+    }
   });
 });

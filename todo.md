@@ -10,3 +10,7 @@
 - [x] Add responsive layouts for web and one-handed Android interactions.
 - [x] Add deterministic tests for role routing and issue status changes.
 - [x] Validate TypeScript and the responsive rendered experience.
+- [x] Add an English, Shona, and Ndebele language selector with translated core interface labels.
+- [x] Introduce a consistent icon system, enhanced cards, accessible visual status signals, and subtle interaction animation.
+- [x] Add practical request actions such as urgency acknowledgement, satisfaction feedback, and role-specific completion states.
+- [x] Validate the multilingual responsive interface and upgraded user journeys.
