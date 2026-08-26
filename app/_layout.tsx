@@ -18,11 +18,14 @@ export default function Layout() {
           <I18nProvider>
             <MaintenanceProvider>
               <StatusBar style="light" backgroundColor={C.navy} translucent={false} animated />
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack initialRouteName="welcome" screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="welcome" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="report" />
                 <Stack.Screen name="request/[id]" />
                 <Stack.Screen name="role-select" options={{ presentation: "modal" }} />
+                <Stack.Screen name="settings/notifications" options={{ presentation: "card" }} />
+                <Stack.Screen name="help" options={{ presentation: "card" }} />
               </Stack>
             </MaintenanceProvider>
           </I18nProvider>

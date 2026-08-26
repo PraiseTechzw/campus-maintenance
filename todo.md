@@ -35,3 +35,8 @@
 - [x] Add ETA badges to active report cards with status-aware estimated response times.
 - [x] Apply the primary dashboard visual system to the Activity feed.
 - [x] Validate the enhanced map, ETA, and activity-feed experience across responsive web and Android flows.
+- [x] Add technician-entered arrival-time management and accurate live ETA display.
+- [x] Make the campus-map maintenance pin open a location detail sheet.
+- [x] Add activity-feed filters for update type and request status.
+- [x] Add a complete authentication entry flow and missing application screens for a production-oriented journey.
+- [x] Audit and validate all key end-to-end user journeys across roles, auth, maps, arrival times, and activity filtering.
