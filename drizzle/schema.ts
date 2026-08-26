@@ -25,6 +25,7 @@ export const maintenanceRequests = mysqlTable("maintenance_requests", {
   team: mysqlEnum("team", ["ICT", "Physical Maintenance", "Security"]).notNull(),
   assigneeName: varchar("assigneeName", { length: 160 }),
   arrivalTime: varchar("arrivalTime", { length: 80 }),
+  slaDueAt: timestamp("slaDueAt"),
   attachmentKey: varchar("attachmentKey", { length: 512 }),
   attachmentUrl: text("attachmentUrl"),
   acknowledged: boolean("acknowledged").default(false).notNull(),
