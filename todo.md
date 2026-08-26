@@ -44,3 +44,7 @@
 - [x] Persist notification preferences per authenticated account.
 - [x] Add a data-driven campus-building coordinate model and map location context ready for verified institutional coordinates.
 - [x] Validate account routing, saved notification preferences, and campus map data flows.
+- [x] Define and implement a desktop and tablet website information architecture with a responsive web navigation shell.
+- [x] Create web-optimized role dashboards with denser operational context and desktop-ready layouts.
+- [x] Optimize request queues, activity, profile, and supporting screens for responsive web use.
+- [x] Validate desktop, tablet, and Android-responsive website views.
