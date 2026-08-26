@@ -24,6 +24,7 @@ export const maintenanceRequests = mysqlTable("maintenance_requests", {
   status: mysqlEnum("status", ["Submitted", "Assigned", "In Progress", "Resolved"]).default("Submitted").notNull(),
   team: mysqlEnum("team", ["ICT", "Physical Maintenance", "Security"]).notNull(),
   assigneeName: varchar("assigneeName", { length: 160 }),
+  arrivalTime: varchar("arrivalTime", { length: 80 }),
   attachmentKey: varchar("attachmentKey", { length: 512 }),
   attachmentUrl: text("attachmentUrl"),
   acknowledged: boolean("acknowledged").default(false).notNull(),
@@ -41,8 +42,40 @@ export const maintenanceUpdates = mysqlTable("maintenance_updates", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const campusUserProfiles = mysqlTable("campus_user_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  operationalRole: varchar("operationalRole", { length: 32 }).default("student").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const notificationPreferences = mysqlTable("notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  assignments: boolean("assignments").default(true).notNull(),
+  arrivals: boolean("arrivals").default(true).notNull(),
+  urgent: boolean("urgent").default(true).notNull(),
+  resolutions: boolean("resolutions").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const campusBuildings = mysqlTable("campus_buildings", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 32 }).notNull().unique(),
+  name: varchar("name", { length: 160 }).notNull(),
+  area: varchar("area", { length: 160 }),
+  latitude: varchar("latitude", { length: 32 }).notNull(),
+  longitude: varchar("longitude", { length: 32 }).notNull(),
+  accessNote: text("accessNote"),
+  active: boolean("active").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type MaintenanceRequestRecord = typeof maintenanceRequests.$inferSelect;
 export type MaintenanceUpdateRecord = typeof maintenanceUpdates.$inferSelect;
 export type InsertMaintenanceRequest = typeof maintenanceRequests.$inferInsert;
+export type CampusUserProfile = typeof campusUserProfiles.$inferSelect;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type CampusBuilding = typeof campusBuildings.$inferSelect;

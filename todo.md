@@ -40,3 +40,7 @@
 - [x] Add activity-feed filters for update type and request status.
 - [x] Add a complete authentication entry flow and missing application screens for a production-oriented journey.
 - [x] Audit and validate all key end-to-end user journeys across roles, auth, maps, arrival times, and activity filtering.
+- [x] Connect authenticated institution identities to role assignments and automatic role-specific dashboard routing.
+- [x] Persist notification preferences per authenticated account.
+- [x] Add a data-driven campus-building coordinate model and map location context ready for verified institutional coordinates.
+- [x] Validate account routing, saved notification preferences, and campus map data flows.

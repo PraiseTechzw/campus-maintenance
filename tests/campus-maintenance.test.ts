@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { languageOptions, translations } from "../lib/i18n";
-import { roles, teamFor } from "../lib/maintenance-store";
+import { campusRoles as roles, campusTeamFor as teamFor } from "../lib/campus-domain";
 
 describe("Campus Maintenance role routing", () => {
   it("supports the five required campus workspaces", () => {

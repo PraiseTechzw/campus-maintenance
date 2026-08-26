@@ -8,6 +8,8 @@ import { C, shadow } from "@/constants/campus";
 import { haptic } from "@/lib/haptics";
 import { roleSummaryKey, useI18n } from "@/lib/i18n";
 import { useMaintenance } from "@/lib/maintenance-store";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
 
 export default function Home() {
   const router = useRouter();
@@ -25,6 +27,11 @@ export default function Home() {
   const nextIct = visible.find((item) => item.status !== "Resolved");
   const nextSecurity = unacknowledged[0] ?? urgent[0] ?? visible.find((item) => item.status !== "Resolved");
   const [locationVisible, setLocationVisible] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const buildings = trpc.campusMap.buildings.useQuery(undefined, { enabled: isAuthenticated });
+  const building = buildings.data?.find((item) => item.name.toLowerCase().includes("technology")) ?? buildings.data?.[0];
+  const mapTitle = building?.name ?? "Technology Block";
+  const mapSubtitle = building ? `${building.code}${building.area ? ` · ${building.area}` : ""}` : "Computer Lab 2 · Campus data pending";
   const heading = ict ? "ICT work desk" : security ? "Security control desk" : role === "administrator" ? t("readyImpact") : t("howHelp");
   const helper = ict ? "Technology requests assigned to ICT only." : security ? "Security incidents and alerts assigned to your team only." : t(roleSummaryKey[role]);
 
@@ -38,7 +45,7 @@ export default function Home() {
             <View style={s.studentHeroTop}><View style={s.studentBadge}><MaterialIcons name="school" size={16} color="#9ED2FF" /><Text style={s.studentBadgeText}>CAMPUS CARE</Text></View><View style={s.heroAvatar}><Text style={s.heroAvatarText}>ST</Text></View></View>
             <Text style={s.studentHeroTitle}>Your campus,{"\n"}taken care of.</Text>
             <Text style={s.studentHeroText}>{open.length ? `${open.length} active report${open.length === 1 ? "" : "s"} is being tracked for you.` : "Everything you reported is up to date."}</Text>
-            <CampusMapMini onPress={() => setLocationVisible(true)} />
+            <CampusMapMini onPress={() => setLocationVisible(true)} verified={Boolean(building)} />
             <Pressable onPress={() => { haptic.light(); router.push("/report"); }} style={({ pressed }) => [s.heroCta, pressed && s.pressed]}><View style={s.heroCtaIcon}><MaterialIcons name="add" size={18} color={C.navy} /></View><Text style={s.heroCtaText}>Report a campus issue</Text><MaterialIcons name="arrow-forward" size={18} color={C.navy} /></Pressable>
           </View>
           <View style={s.commandStrip}>
@@ -54,12 +61,12 @@ export default function Home() {
           <View style={s.feed}>{visible.slice(0, 4).map((item) => <Card key={item.id} item={item} onPress={() => router.push(`/request/${item.id}`)} />)}</View>
         </>}
       </ScrollView>
-      <Modal transparent visible={locationVisible} animationType="slide" onRequestClose={() => setLocationVisible(false)}><View style={s.locationSheetBackdrop}><Pressable onPress={() => setLocationVisible(false)} style={s.locationSheetDismiss} /><View style={s.locationSheet}><View style={s.sheetHandle} /><View style={s.sheetMapPreview}><View style={s.sheetRouteA} /><View style={s.sheetRouteB} /><View style={s.sheetMapBuilding}><MaterialIcons name="computer" size={20} color="#BBD8FF" /></View><View style={s.sheetMapPin}><MaterialIcons name="build" size={16} color={C.navy} /></View></View><View style={s.sheetTitleRow}><View><Text style={s.sheetEyebrow}>MAINTENANCE LOCATION</Text><Text style={s.sheetTitle}>Technology Block</Text><Text style={s.sheetSub}>Computer Lab 2 · East campus</Text></View><Pressable onPress={() => setLocationVisible(false)} style={s.sheetClose}><MaterialIcons name="close" size={19} color={C.navy} /></Pressable></View><View style={s.sheetInfoRow}><MaterialIcons name="directions-walk" size={18} color={C.blue} /><Text style={s.sheetInfoText}>Use the main Technology Block entrance and follow the Lab 2 signage. Accessibility route available from the east walkway.</Text></View><View style={s.sheetReportRow}><View style={s.sheetReportIcon}><MaterialIcons name="assignment" size={18} color={C.blue} /></View><View style={{ flex: 1 }}><Text style={s.sheetReportTitle}>{open.length} active report{open.length === 1 ? "" : "s"} nearby</Text><Text style={s.sheetReportText}>Campus Maintenance is tracking work in this location.</Text></View><MaterialIcons name="chevron-right" size={22} color={C.blue} /></View></View></View></Modal>
+      <Modal transparent visible={locationVisible} animationType="slide" onRequestClose={() => setLocationVisible(false)}><View style={s.locationSheetBackdrop}><Pressable onPress={() => setLocationVisible(false)} style={s.locationSheetDismiss} /><View style={s.locationSheet}><View style={s.sheetHandle} /><View style={s.sheetMapPreview}><View style={s.sheetRouteA} /><View style={s.sheetRouteB} /><View style={s.sheetMapBuilding}><MaterialIcons name="computer" size={20} color="#BBD8FF" /></View><View style={s.sheetMapPin}><MaterialIcons name="build" size={16} color={C.navy} /></View></View><View style={s.sheetTitleRow}><View><Text style={s.sheetEyebrow}>MAINTENANCE LOCATION</Text><Text style={s.sheetTitle}>{mapTitle}</Text><Text style={s.sheetSub}>{mapSubtitle}</Text></View><Pressable onPress={() => setLocationVisible(false)} style={s.sheetClose}><MaterialIcons name="close" size={19} color={C.navy} /></Pressable></View><View style={s.sheetInfoRow}><MaterialIcons name={building ? "location-on" : "info-outline"} size={18} color={C.blue} /><Text style={s.sheetInfoText}>{building?.accessNote ?? "Verified campus coordinates are pending an approved institutional map or building-coordinate list. The application is ready to use them when supplied."}</Text></View><View style={s.sheetReportRow}><View style={s.sheetReportIcon}><MaterialIcons name={building ? "my-location" : "assignment"} size={18} color={C.blue} /></View><View style={{ flex: 1 }}><Text style={s.sheetReportTitle}>{building ? `${building.latitude}, ${building.longitude}` : `${open.length} active report${open.length === 1 ? "" : "s"} nearby`}</Text><Text style={s.sheetReportText}>{building ? "Verified building coordinates loaded from the campus data service." : "Campus Maintenance is ready to display verified building coordinates."}</Text></View><MaterialIcons name="chevron-right" size={22} color={C.blue} /></View></View></View></Modal>
     </View>
   );
 }
 
-function CampusMapMini({ onPress }: { onPress: () => void }) { return <Pressable onPress={onPress} style={s.campusMap}><Text style={s.mapLabel}>CAMPUS MAP</Text><View style={s.mapRouteA} /><View style={s.mapRouteB} /><View style={[s.mapBuilding, s.mapLibrary]}><MaterialIcons name="local-library" size={12} color="#BBD8FF" /></View><View style={[s.mapBuilding, s.mapLab]}><MaterialIcons name="computer" size={12} color="#BBD8FF" /></View><View style={[s.mapBuilding, s.mapHall]}><MaterialIcons name="apartment" size={12} color="#BBD8FF" /></View><View style={s.mapPin}><MaterialIcons name="build" size={12} color={C.navy} /></View></Pressable>; }
+function CampusMapMini({ onPress, verified }: { onPress: () => void; verified: boolean }) { return <Pressable onPress={onPress} style={s.campusMap}><Text style={s.mapLabel}>{verified ? "LIVE CAMPUS MAP" : "CAMPUS MAP"}</Text><View style={s.mapRouteA} /><View style={s.mapRouteB} /><View style={[s.mapBuilding, s.mapLibrary]}><MaterialIcons name="local-library" size={12} color="#BBD8FF" /></View><View style={[s.mapBuilding, s.mapLab]}><MaterialIcons name="computer" size={12} color="#BBD8FF" /></View><View style={[s.mapBuilding, s.mapHall]}><MaterialIcons name="apartment" size={12} color="#BBD8FF" /></View><View style={s.mapPin}><MaterialIcons name={verified ? "my-location" : "build"} size={12} color={C.navy} /></View></Pressable>; }
 function StripMetric({ icon, value, label, color }: { icon: keyof typeof MaterialIcons.glyphMap; value: number; label: string; color: string }) { return <View style={s.stripMetric}><MaterialIcons name={icon} size={17} color={color} /><Text style={s.stripValue}>{value}</Text><Text style={s.stripLabel}>{label}</Text></View>; }
 function StaffMetric({ icon, n, label, color }: { icon: keyof typeof MaterialIcons.glyphMap; n: number; label: string; color: string }) { return <View style={s.staffMetric}><View style={[s.staffMetricIcon, { backgroundColor: `${color}16` }]}><MaterialIcons name={icon} size={18} color={color} /></View><Text style={s.staffMetricValue}>{n}</Text><Text style={s.staffMetricLabel}>{label}</Text></View>; }
 
