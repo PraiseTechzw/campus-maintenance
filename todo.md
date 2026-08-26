@@ -24,3 +24,8 @@
 - [x] Add photo-evidence preview modal and upload-progress feedback to maintenance reporting and request detail.
 - [x] Add administrator request filters for priority, status, and team, plus sorting controls for urgent and pending work.
 - [x] Validate role dashboards, evidence interactions, and administrator queue controls across responsive web and Android flows.
+- [x] Research and document original UI inspiration patterns from relevant Dribbble maintenance, service-desk, and operations dashboards.
+- [x] Implement an original next-assignment hero for ICT and an urgent-security exception hero.
+- [x] Add a clearer active status rail and location context to request detail.
+- [x] Add a concise active queue-lens summary to the administrator command center.
+- [x] Validate the refined role dashboards, request detail, and administrator queue experience.
