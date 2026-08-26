@@ -29,3 +29,5 @@
 - [x] Add a clearer active status rail and location context to request detail.
 - [x] Add a concise active queue-lens summary to the administrator command center.
 - [x] Validate the refined role dashboards, request detail, and administrator queue experience.
+- [x] Apply a visibly distinct inspiration-driven redesign to the main student dashboard hero, metrics, and request cards.
+- [x] Validate that the primary dashboard visibly differs from the previous layout on responsive web and Android flows.
