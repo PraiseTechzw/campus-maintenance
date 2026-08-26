@@ -1,0 +1,7 @@
+export type AnalyticsRequest = { team: "ICT" | "Physical Maintenance" | "Security"; priority: "Low" | "Medium" | "High" | "Urgent"; status: "Submitted" | "Assigned" | "In Progress" | "Resolved" };
+
+export function computeAdminAnalytics(requests: AnalyticsRequest[]) {
+  const total = requests.length; const resolved = requests.filter((item) => item.status === "Resolved").length; const active = requests.filter((item) => item.status === "In Progress").length; const pending = requests.filter((item) => item.status === "Submitted" || item.status === "Assigned").length; const atRisk = requests.filter((item) => item.status !== "Resolved" && (item.priority === "Urgent" || (item.priority === "High" && item.status === "Submitted"))).length; const onTrack = Math.max(0, total - atRisk - pending); const completionRate = total ? Math.round((resolved / total) * 100) : 0;
+  const teams = (["ICT", "Physical Maintenance", "Security"] as const).map((team) => { const queue = requests.filter((item) => item.team === team); return { team, total: queue.length, active: queue.filter((item) => item.status === "In Progress").length, resolved: queue.filter((item) => item.status === "Resolved").length, attention: queue.filter((item) => item.status !== "Resolved" && (item.priority === "Urgent" || (item.priority === "High" && item.status === "Submitted"))).length }; });
+  return { total, resolved, active, pending, atRisk, onTrack, completionRate, teams };
+}

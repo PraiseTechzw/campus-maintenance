@@ -23,6 +23,7 @@ export default function Layout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="report" />
                 <Stack.Screen name="request/[id]" />
+                <Stack.Screen name="building/[code]" options={{ presentation: "card" }} />
                 <Stack.Screen name="role-select" options={{ presentation: "modal" }} />
                 <Stack.Screen name="settings/notifications" options={{ presentation: "card" }} />
                 <Stack.Screen name="help" options={{ presentation: "card" }} />
