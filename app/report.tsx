@@ -27,9 +27,9 @@ export default function Report() {
     setError("");
     try {
       if (photo) { setUploadProgress(16); await new Promise((resolve) => setTimeout(resolve, 180)); setUploadProgress(48); }
-      if (isAuthenticated) { if (photo) setUploadProgress(72); await createLive.mutateAsync({ title: title.trim(), category, location: location.trim(), description: description.trim(), priority, attachment: photo ? { base64: photo.base64, mimeType: photo.mimeType, fileName: photo.fileName } : undefined }); }
+      const saved = isAuthenticated ? (photo && setUploadProgress(72), await createLive.mutateAsync({ title: title.trim(), category, location: location.trim(), description: description.trim(), priority, attachment: photo ? { base64: photo.base64, mimeType: photo.mimeType, fileName: photo.fileName } : undefined })) : undefined;
       if (photo) { setUploadProgress(100); await new Promise((resolve) => setTimeout(resolve, 140)); }
-      const id = create({ title: title.trim(), category, location: location.trim(), description: description.trim(), priority, attachmentUri: photo?.uri });
+      const id = create({ title: title.trim(), category, location: location.trim(), description: description.trim(), priority, attachmentUri: photo?.uri }, saved);
       if (priority === "Urgent" || category === "Security") await notifyUrgentRequest(title.trim(), location.trim());
       haptic.success(); router.replace(`/request/${id}`);
     } catch { setUploadProgress(0); setError("Unable to save the live request. Your demonstration workspace remains available; please try again after signing in."); }

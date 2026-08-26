@@ -56,3 +56,7 @@
 - [x] Add visual SLA deadlines and approaching-breach highlights on maintenance request cards.
 - [x] Add global search auto-complete suggestions and a recent-searches dropdown.
 - [x] Validate analytics export, SLA deadline signals, and assisted global search behavior.
+- [x] Audit the existing backend and document the remaining persistence and protection gaps.
+- [x] Strengthen protected backend operations for requests, updates, roles, preferences, buildings, and analytics.
+- [x] Connect authenticated core reporting and maintenance workflows to persistent backend data.
+- [x] Validate backend protection, persistence, and role-aware data access.
