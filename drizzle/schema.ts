@@ -73,6 +73,13 @@ export const campusBuildings = mysqlTable("campus_buildings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const campusSlaPolicies = mysqlTable("campus_sla_policies", {
+  id: int("id").autoincrement().primaryKey(),
+  priority: varchar("priority", { length: 16 }).notNull().unique(),
+  targetHours: int("targetHours").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type MaintenanceRequestRecord = typeof maintenanceRequests.$inferSelect;
@@ -81,3 +88,4 @@ export type InsertMaintenanceRequest = typeof maintenanceRequests.$inferInsert;
 export type CampusUserProfile = typeof campusUserProfiles.$inferSelect;
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type CampusBuilding = typeof campusBuildings.$inferSelect;
+export type CampusSlaPolicy = typeof campusSlaPolicies.$inferSelect;

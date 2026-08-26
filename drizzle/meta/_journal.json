@@ -36,6 +36,13 @@
       "when": 1787736448513,
       "tag": "0004_flaky_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1787741019328,
+      "tag": "0005_abnormal_mole_man",
+      "breakpoints": true
     }
   ]
 }

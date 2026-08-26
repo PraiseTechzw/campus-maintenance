@@ -60,3 +60,8 @@
 - [x] Strengthen protected backend operations for requests, updates, roles, preferences, buildings, and analytics.
 - [x] Connect authenticated core reporting and maintenance workflows to persistent backend data.
 - [x] Validate backend protection, persistence, and role-aware data access.
+- [x] Audit all remaining hard-coded operational data, demonstration behavior, and production readiness gaps.
+- [x] Replace static staff and assignment values with persistent account-backed directory data.
+- [x] Add administrator controls for staff role assignment, technician assignment, and verified campus locations.
+- [x] Harden authenticated data loading, mutation failures, empty states, and production fallback behavior.
+- [x] Validate the production-readiness upgrade across protected backend and responsive application workflows.
