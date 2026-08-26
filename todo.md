@@ -20,3 +20,7 @@
 - [x] Add photo attachment intake and display for maintenance requests.
 - [x] Add urgent-request notification readiness and operational activity alerts.
 - [x] Validate account-backed, attachment, and urgent-request experiences across responsive web and Android flows.
+- [x] Create role-specific ICT Technician and Security Officer dashboards with only relevant work and alerts.
+- [x] Add photo-evidence preview modal and upload-progress feedback to maintenance reporting and request detail.
+- [x] Add administrator request filters for priority, status, and team, plus sorting controls for urgent and pending work.
+- [x] Validate role dashboards, evidence interactions, and administrator queue controls across responsive web and Android flows.
