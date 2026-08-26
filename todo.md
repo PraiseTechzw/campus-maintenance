@@ -31,3 +31,7 @@
 - [x] Validate the refined role dashboards, request detail, and administrator queue experience.
 - [x] Apply a visibly distinct inspiration-driven redesign to the main student dashboard hero, metrics, and request cards.
 - [x] Validate that the primary dashboard visibly differs from the previous layout on responsive web and Android flows.
+- [x] Add a compact original campus-map illustration to the primary dashboard hero.
+- [x] Add ETA badges to active report cards with status-aware estimated response times.
+- [x] Apply the primary dashboard visual system to the Activity feed.
+- [x] Validate the enhanced map, ETA, and activity-feed experience across responsive web and Android flows.
