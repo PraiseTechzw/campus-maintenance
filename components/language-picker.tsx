@@ -16,6 +16,7 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
           </Pressable>
         ))}
       </View>
+      {!compact && language !== "en" && <View style={s.review}><MaterialIcons name="verified-user" size={13} color={C.warn} /><Text style={s.reviewText}>Community wording review recommended before release.</Text></View>}
     </View>
   );
 }
@@ -31,4 +32,6 @@ const s = StyleSheet.create({
   optionText: { color: C.muted, fontSize: 10, fontWeight: "900" },
   selectedText: { color: "#FFFFFF" },
   pressed: { opacity: 0.68 },
+  review: { flexDirection: "row", alignItems: "flex-start", gap: 5, backgroundColor: "#FFF5DE", borderRadius: 9, padding: 7 },
+  reviewText: { color: "#8A5700", fontSize: 10, lineHeight: 14, fontWeight: "700", flex: 1 },
 });

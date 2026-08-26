@@ -6,7 +6,7 @@ export type Category = "ICT" | "Plumbing" | "Electrical" | "Building" | "Cleanin
 export type Status = "Submitted" | "Assigned" | "In Progress" | "Resolved";
 export type Priority = "Low" | "Medium" | "High" | "Urgent";
 export type Activity = { id: string; action: string; author: string; time: string; note?: string };
-export type Request = { id: string; title: string; category: Category; location: string; description: string; priority: Priority; status: Status; reporter: string; team: Team; assignee?: string; time: string; activity: Activity[]; acknowledged?: boolean; satisfaction?: 1 | 2 | 3 };
+export type Request = { id: string; title: string; category: Category; location: string; description: string; priority: Priority; status: Status; reporter: string; team: Team; assignee?: string; time: string; activity: Activity[]; acknowledged?: boolean; satisfaction?: 1 | 2 | 3; attachmentUri?: string };
 export const roles: Record<Role, { label: string; summary: string; initials: string; team?: Team; name: string }> = {
   student: { label: "Student", summary: "Report campus issues and follow every update.", initials: "ST", name: "Amara N." },
   ict: { label: "ICT Technician", summary: "Diagnose and resolve technology requests assigned to ICT.", initials: "IT", team: "ICT", name: "Jordan M." },
@@ -21,7 +21,7 @@ const seed: Request[] = [
   { id: "CM-2415", title: "Unsecured access door after hours", category: "Security", location: "Science Block · Rear entrance", description: "Rear access door was found open after the building closed.", priority: "Urgent", status: "Assigned", reporter: "Facilities Desk", team: "Security", assignee: "Nandi S.", time: "Today, 06:46", activity: [{ id: "6", action: "Security incident submitted", author: "Facilities Desk", time: "Today, 06:42" }, { id: "7", action: "Assigned to Security", author: "Campus Admin", time: "Today, 06:46", note: "High-priority attendance requested." }] },
   { id: "CM-2414", title: "Projector cable replaced", category: "ICT", location: "Humanities Block · Lecture Hall 3", description: "The HDMI connection was damaged and has been replaced.", priority: "Low", status: "Resolved", reporter: "Professor Daniels", team: "ICT", assignee: "Jordan M.", time: "Yesterday, 11:20", activity: [{ id: "8", action: "Resolved", author: "Jordan M.", time: "Yesterday, 11:20", note: "New HDMI cable tested successfully." }] },
 ];
-type Store = { role: Role; setRole: (v: Role) => void; requests: Request[]; visible: Request[]; create: (v: Pick<Request, "title" | "category" | "location" | "description" | "priority">) => string; assign: (id: string, team: Team) => void; status: (id: string, value: Status, note?: string) => void; note: (id: string, text: string) => void; acknowledge: (id: string) => void; rate: (id: string, value: 1 | 2 | 3) => void };
+type Store = { role: Role; setRole: (v: Role) => void; requests: Request[]; visible: Request[]; create: (v: Pick<Request, "title" | "category" | "location" | "description" | "priority"> & { attachmentUri?: string }) => string; assign: (id: string, team: Team) => void; status: (id: string, value: Status, note?: string) => void; note: (id: string, text: string) => void; acknowledge: (id: string) => void; rate: (id: string, value: 1 | 2 | 3) => void };
 const Context = createContext<Store | null>(null);
 export const teamFor = (category: Category): Team => category === "ICT" ? "ICT" : category === "Security" ? "Security" : "Physical Maintenance";
 export function MaintenanceProvider({ children }: { children: ReactNode }) {

@@ -14,3 +14,9 @@
 - [x] Introduce a consistent icon system, enhanced cards, accessible visual status signals, and subtle interaction animation.
 - [x] Add practical request actions such as urgency acknowledgement, satisfaction feedback, and role-specific completion states.
 - [x] Validate the multilingual responsive interface and upgraded user journeys.
+- [x] Refine the global header, role identity area, navigation bar, and native status-bar treatment.
+- [x] Add visible Shona and Ndebele language-verification review cues and a handoff checklist for native speakers.
+- [x] Connect authenticated users and maintenance requests to persistent backend data with role-aware access.
+- [x] Add photo attachment intake and display for maintenance requests.
+- [x] Add urgent-request notification readiness and operational activity alerts.
+- [x] Validate account-backed, attachment, and urgent-request experiences across responsive web and Android flows.
