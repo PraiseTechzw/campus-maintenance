@@ -6,6 +6,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { computeAdminAnalytics } from "../lib/analytics";
+import { computeGovernanceMetrics } from "../lib/governance-metrics";
 
 const category = z.enum(["ICT", "Plumbing", "Electrical", "Building", "Cleaning", "Security"]);
 const priority = z.enum(["Low", "Medium", "High", "Urgent"]);
@@ -19,9 +20,11 @@ const buildingInput = z.object({ code: z.string().trim().min(2).max(32), name: z
 const slaPolicyInput = z.object({ priority, targetHours: z.number().int().min(1).max(8760) });
 const staffPermissionsInput = z.object({ userId: z.number(), manageUsers: z.boolean(), manageRequests: z.boolean(), manageLocations: z.boolean(), manageServiceLevels: z.boolean(), manageEscalations: z.boolean(), viewAnalytics: z.boolean() });
 const escalationRuleInput = z.object({ priority, thresholdMinutes: z.number().int().min(1).max(525600), notifyRole: escalationRecipientRole, active: z.boolean() });
+const bulkProvisioningInput = z.object({ rows: z.array(z.object({ email: z.string().trim().email().max(320), displayName: z.string().trim().max(160).optional(), operationalRole: campusRole, manageUsers: z.boolean(), manageRequests: z.boolean(), manageLocations: z.boolean(), manageServiceLevels: z.boolean(), manageEscalations: z.boolean(), viewAnalytics: z.boolean() })).min(1).max(100) });
 async function operationalProfile(userId: number, isPlatformAdmin: boolean) { return db.getCampusProfile(userId, isPlatformAdmin); }
 async function requireAdministrator(userId: number, isPlatformAdmin: boolean) { const profile = await operationalProfile(userId, isPlatformAdmin); if (!isPlatformAdmin && profile.operationalRole !== "administrator") throw new Error("Administrator role required"); return profile; }
 async function requirePermission(userId: number, isPlatformAdmin: boolean, permission: keyof db.StaffPermissionInput) { await requireAdministrator(userId, isPlatformAdmin); if (isPlatformAdmin) return; const permissions = await db.getStaffPermissions(userId); if (!permissions[permission]) throw new Error("Your administrator account does not have this permission"); }
+async function requireAuditViewer(userId: number, isPlatformAdmin: boolean) { await requireAdministrator(userId, isPlatformAdmin); if (isPlatformAdmin) return; const permissions = await db.getStaffPermissions(userId); if (!permissions.manageUsers && !permissions.manageServiceLevels && !permissions.manageEscalations && !permissions.viewAnalytics) throw new Error("Your administrator account does not have permission to view governance history"); }
 async function requestAccess(userId: number, isPlatformAdmin: boolean, requestId: number) { const profile = await operationalProfile(userId, isPlatformAdmin); const access = await db.canAccessRequest(requestId, userId, profile.operationalRole, isPlatformAdmin); if (!access.request) throw new Error("Maintenance request not found"); if (!access.allowed) throw new Error("You are not permitted to access this maintenance request"); return { profile, request: access.request }; }
 
 export const appRouter = router({
@@ -33,10 +36,15 @@ export const appRouter = router({
     profile: protectedProcedure.query(({ ctx }) => db.getCampusAccess(ctx.user.id, ctx.user.role === "admin")),
     assignRole: protectedProcedure.input(z.object({ userId: z.number(), operationalRole: campusRole })).mutation(async ({ ctx, input }) => {
       await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers");
-      return db.setCampusProfileRole(input.userId, input.operationalRole);
+      const before = await db.getCampusProfile(input.userId);
+      const result = await db.setCampusProfileRole(input.userId, input.operationalRole);
+      await db.addAdminAuditLog({ actorUserId: ctx.user.id, subjectUserId: input.userId, eventType: "staff.role.updated", description: "Updated a staff operational role", beforeData: { operationalRole: before.operationalRole }, afterData: { operationalRole: input.operationalRole } });
+      return result;
     }),
     directory: protectedProcedure.query(async ({ ctx }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); return db.listInstitutionAccounts(); }),
-    savePermissions: protectedProcedure.input(staffPermissionsInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); const { userId, ...permissions } = input; return db.saveStaffPermissions(userId, permissions); }),
+    savePermissions: protectedProcedure.input(staffPermissionsInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); const { userId, ...permissions } = input; const before = await db.getStaffPermissions(userId); const result = await db.saveStaffPermissions(userId, permissions); await db.addAdminAuditLog({ actorUserId: ctx.user.id, subjectUserId: userId, eventType: "staff.permissions.updated", description: "Updated delegated staff permissions", beforeData: before, afterData: permissions }); return result; }),
+    bulkProvision: protectedProcedure.input(bulkProvisioningInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); return db.importStaffProvisionings(ctx.user.id, input.rows.map((row) => ({ email: row.email, displayName: row.displayName, operationalRole: row.operationalRole, permissions: { manageUsers: row.manageUsers, manageRequests: row.manageRequests, manageLocations: row.manageLocations, manageServiceLevels: row.manageServiceLevels, manageEscalations: row.manageEscalations, viewAnalytics: row.viewAnalytics } }))); }),
+    auditLog: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(150).default(80) }).optional()).query(async ({ ctx, input }) => { await requireAuditViewer(ctx.user.id, ctx.user.role === "admin"); return db.listAdminAuditLogs(input?.limit ?? 80); }),
   }),
   notificationPreferences: router({
     get: protectedProcedure.query(({ ctx }) => db.getNotificationPreferences(ctx.user.id)),
@@ -49,9 +57,9 @@ export const appRouter = router({
   }),
   serviceConfiguration: router({
     slaPolicies: protectedProcedure.query(() => db.listSlaPolicies()),
-    saveSlaPolicy: protectedProcedure.input(slaPolicyInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageServiceLevels"); return db.saveSlaPolicy(input); }),
+    saveSlaPolicy: protectedProcedure.input(slaPolicyInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageServiceLevels"); const before = await db.getSlaPolicy(input.priority); const result = await db.saveSlaPolicy(input); await db.addAdminAuditLog({ actorUserId: ctx.user.id, eventType: "sla.target.updated", description: `Updated ${input.priority} SLA target`, beforeData: before ? { targetHours: before.targetHours } : undefined, afterData: { targetHours: input.targetHours } }); return result; }),
     escalationRules: protectedProcedure.query(async ({ ctx }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageEscalations"); return db.listEscalationRules(); }),
-    saveEscalationRule: protectedProcedure.input(escalationRuleInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageEscalations"); const policy = await db.getSlaPolicy(input.priority); if (!policy) throw new Error(`Configure an approved ${input.priority} SLA target before defining its escalation rule`); if (input.thresholdMinutes > policy.targetHours * 60) throw new Error("The escalation threshold must be within the approved SLA target window"); return db.saveEscalationRule(input); }),
+    saveEscalationRule: protectedProcedure.input(escalationRuleInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageEscalations"); const policy = await db.getSlaPolicy(input.priority); if (!policy) throw new Error(`Configure an approved ${input.priority} SLA target before defining its escalation rule`); if (input.thresholdMinutes > policy.targetHours * 60) throw new Error("The escalation threshold must be within the approved SLA target window"); const before = await db.getEscalationRule(input.priority); const result = await db.saveEscalationRule(input); await db.addAdminAuditLog({ actorUserId: ctx.user.id, eventType: "sla.escalation.updated", description: `Updated ${input.priority} escalation rule`, beforeData: before ? { thresholdMinutes: before.thresholdMinutes, notifyRole: before.notifyRole, active: before.active } : undefined, afterData: input }); return result; }),
   }),
   maintenance: router({
     list: protectedProcedure.query(async ({ ctx }) => { const profile = await operationalProfile(ctx.user.id, ctx.user.role === "admin"); return db.listRequestsForRole(ctx.user.id, profile.operationalRole, ctx.user.role === "admin"); }),
@@ -71,7 +79,7 @@ export const appRouter = router({
     }),
     addUpdate: protectedProcedure.input(z.object({ id: z.number(), action: z.string().min(2).max(160), note: z.string().max(2000).optional(), status: status.optional() })).mutation(async ({ ctx, input }) => {
       await requestAccess(ctx.user.id, ctx.user.role === "admin", input.id);
-      if (input.status) await db.updateRequest(input.id, { status: input.status });
+      if (input.status) await db.updateRequest(input.id, { status: input.status, resolvedAt: input.status === "Resolved" ? new Date() : null });
       await db.addUpdate(input.id, ctx.user.id, input.action, input.note);
       return { success: true };
     }),
@@ -110,6 +118,13 @@ export const appRouter = router({
         status: item.status,
         slaDueAt: item.slaDueAt?.toISOString(),
       })));
+    }),
+  }),
+  governance: router({
+    overview: protectedProcedure.query(async ({ ctx }) => {
+      await requirePermission(ctx.user.id, ctx.user.role === "admin", "viewAnalytics");
+      const { requests, escalationRules } = await db.governanceData();
+      return computeGovernanceMetrics(requests, escalationRules);
     }),
   }),
 });

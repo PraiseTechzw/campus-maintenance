@@ -27,6 +27,7 @@ export const maintenanceRequests = mysqlTable("maintenance_requests", {
   assigneeUserId: int("assigneeUserId"),
   arrivalTime: varchar("arrivalTime", { length: 80 }),
   slaDueAt: timestamp("slaDueAt"),
+  resolvedAt: timestamp("resolvedAt"),
   attachmentKey: varchar("attachmentKey", { length: 512 }),
   attachmentUrl: text("attachmentUrl"),
   acknowledged: boolean("acknowledged").default(false).notNull(),
@@ -101,6 +102,32 @@ export const campusEscalationRules = mysqlTable("campus_escalation_rules", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const campusAdminAuditLogs = mysqlTable("campus_admin_audit_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  actorUserId: int("actorUserId").notNull(),
+  subjectUserId: int("subjectUserId"),
+  eventType: varchar("eventType", { length: 80 }).notNull(),
+  description: varchar("description", { length: 500 }).notNull(),
+  beforeData: text("beforeData"),
+  afterData: text("afterData"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const campusStaffProvisionings = mysqlTable("campus_staff_provisionings", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  displayName: varchar("displayName", { length: 160 }),
+  operationalRole: varchar("operationalRole", { length: 32 }).notNull(),
+  manageUsers: boolean("manageUsers").default(false).notNull(),
+  manageRequests: boolean("manageRequests").default(false).notNull(),
+  manageLocations: boolean("manageLocations").default(false).notNull(),
+  manageServiceLevels: boolean("manageServiceLevels").default(false).notNull(),
+  manageEscalations: boolean("manageEscalations").default(false).notNull(),
+  viewAnalytics: boolean("viewAnalytics").default(false).notNull(),
+  importedByUserId: int("importedByUserId").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type MaintenanceRequestRecord = typeof maintenanceRequests.$inferSelect;
@@ -112,3 +139,5 @@ export type CampusBuilding = typeof campusBuildings.$inferSelect;
 export type CampusSlaPolicy = typeof campusSlaPolicies.$inferSelect;
 export type CampusStaffPermission = typeof campusStaffPermissions.$inferSelect;
 export type CampusEscalationRule = typeof campusEscalationRules.$inferSelect;
+export type CampusAdminAuditLog = typeof campusAdminAuditLogs.$inferSelect;
+export type CampusStaffProvisioning = typeof campusStaffProvisionings.$inferSelect;

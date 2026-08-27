@@ -35,4 +35,15 @@ describe("Campus Maintenance backend protection", () => {
     const caller = appRouter.createCaller(anonymousContext());
     await expect(caller.serviceConfiguration.saveEscalationRule({ priority: "High", thresholdMinutes: 30, notifyRole: "administrator", active: true })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it("requires an authenticated account before importing staff or reading audit history", async () => {
+    const caller = appRouter.createCaller(anonymousContext());
+    await expect(caller.campusIdentity.bulkProvision({ rows: [{ email: "staff@example.edu", operationalRole: "ict", manageUsers: false, manageRequests: true, manageLocations: false, manageServiceLevels: false, manageEscalations: false, viewAnalytics: false }] })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.campusIdentity.auditLog({ limit: 10 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("requires an authenticated account before reading live governance metrics", async () => {
+    const caller = appRouter.createCaller(anonymousContext());
+    await expect(caller.governance.overview()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });
