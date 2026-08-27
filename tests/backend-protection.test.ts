@@ -25,4 +25,14 @@ describe("Campus Maintenance backend protection", () => {
     const caller = appRouter.createCaller(anonymousContext());
     await expect(caller.campusMap.buildings()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it("requires an authenticated account before changing staff permissions", async () => {
+    const caller = appRouter.createCaller(anonymousContext());
+    await expect(caller.campusIdentity.savePermissions({ userId: 42, manageUsers: false, manageRequests: false, manageLocations: false, manageServiceLevels: false, manageEscalations: false, viewAnalytics: false })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("requires an authenticated account before changing escalation rules", async () => {
+    const caller = appRouter.createCaller(anonymousContext());
+    await expect(caller.serviceConfiguration.saveEscalationRule({ priority: "High", thresholdMinutes: 30, notifyRole: "administrator", active: true })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });

@@ -13,11 +13,15 @@ const team = z.enum(["ICT", "Physical Maintenance", "Security"]);
 const status = z.enum(["Submitted", "Assigned", "In Progress", "Resolved"]);
 const attachment = z.object({ base64: z.string().max(7_000_000), mimeType: z.string().max(100), fileName: z.string().max(120) }).optional();
 const campusRole = z.enum(["student", "ict", "maintenance", "security", "administrator"]);
+const escalationRecipientRole = z.enum(["ict", "maintenance", "security", "administrator"]);
 const preferences = z.object({ assignments: z.boolean(), arrivals: z.boolean(), urgent: z.boolean(), resolutions: z.boolean() });
 const buildingInput = z.object({ code: z.string().trim().min(2).max(32), name: z.string().trim().min(2).max(160), area: z.string().trim().max(160).optional(), latitude: z.string().trim().min(3).max(32), longitude: z.string().trim().min(3).max(32), accessNote: z.string().trim().max(2000).optional(), active: z.boolean().default(true) });
 const slaPolicyInput = z.object({ priority, targetHours: z.number().int().min(1).max(8760) });
+const staffPermissionsInput = z.object({ userId: z.number(), manageUsers: z.boolean(), manageRequests: z.boolean(), manageLocations: z.boolean(), manageServiceLevels: z.boolean(), manageEscalations: z.boolean(), viewAnalytics: z.boolean() });
+const escalationRuleInput = z.object({ priority, thresholdMinutes: z.number().int().min(1).max(525600), notifyRole: escalationRecipientRole, active: z.boolean() });
 async function operationalProfile(userId: number, isPlatformAdmin: boolean) { return db.getCampusProfile(userId, isPlatformAdmin); }
 async function requireAdministrator(userId: number, isPlatformAdmin: boolean) { const profile = await operationalProfile(userId, isPlatformAdmin); if (!isPlatformAdmin && profile.operationalRole !== "administrator") throw new Error("Administrator role required"); return profile; }
+async function requirePermission(userId: number, isPlatformAdmin: boolean, permission: keyof db.StaffPermissionInput) { await requireAdministrator(userId, isPlatformAdmin); if (isPlatformAdmin) return; const permissions = await db.getStaffPermissions(userId); if (!permissions[permission]) throw new Error("Your administrator account does not have this permission"); }
 async function requestAccess(userId: number, isPlatformAdmin: boolean, requestId: number) { const profile = await operationalProfile(userId, isPlatformAdmin); const access = await db.canAccessRequest(requestId, userId, profile.operationalRole, isPlatformAdmin); if (!access.request) throw new Error("Maintenance request not found"); if (!access.allowed) throw new Error("You are not permitted to access this maintenance request"); return { profile, request: access.request }; }
 
 export const appRouter = router({
@@ -26,12 +30,13 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; }),
   }),
   campusIdentity: router({
-    profile: protectedProcedure.query(({ ctx }) => db.getCampusProfile(ctx.user.id, ctx.user.role === "admin")),
+    profile: protectedProcedure.query(({ ctx }) => db.getCampusAccess(ctx.user.id, ctx.user.role === "admin")),
     assignRole: protectedProcedure.input(z.object({ userId: z.number(), operationalRole: campusRole })).mutation(async ({ ctx, input }) => {
-      await requireAdministrator(ctx.user.id, ctx.user.role === "admin");
+      await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers");
       return db.setCampusProfileRole(input.userId, input.operationalRole);
     }),
-    directory: protectedProcedure.query(async ({ ctx }) => { await requireAdministrator(ctx.user.id, ctx.user.role === "admin"); return db.listInstitutionAccounts(); }),
+    directory: protectedProcedure.query(async ({ ctx }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); return db.listInstitutionAccounts(); }),
+    savePermissions: protectedProcedure.input(staffPermissionsInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageUsers"); const { userId, ...permissions } = input; return db.saveStaffPermissions(userId, permissions); }),
   }),
   notificationPreferences: router({
     get: protectedProcedure.query(({ ctx }) => db.getNotificationPreferences(ctx.user.id)),
@@ -40,11 +45,13 @@ export const appRouter = router({
   campusMap: router({
     buildings: protectedProcedure.query(() => db.listCampusBuildings()),
     building: protectedProcedure.input(z.object({ code: z.string().min(1).max(32) })).query(({ input }) => db.getCampusBuilding(input.code)),
-    saveBuilding: protectedProcedure.input(buildingInput).mutation(async ({ ctx, input }) => { await requireAdministrator(ctx.user.id, ctx.user.role === "admin"); return db.saveCampusBuilding(input); }),
+    saveBuilding: protectedProcedure.input(buildingInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageLocations"); return db.saveCampusBuilding(input); }),
   }),
   serviceConfiguration: router({
     slaPolicies: protectedProcedure.query(() => db.listSlaPolicies()),
-    saveSlaPolicy: protectedProcedure.input(slaPolicyInput).mutation(async ({ ctx, input }) => { await requireAdministrator(ctx.user.id, ctx.user.role === "admin"); return db.saveSlaPolicy(input); }),
+    saveSlaPolicy: protectedProcedure.input(slaPolicyInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageServiceLevels"); return db.saveSlaPolicy(input); }),
+    escalationRules: protectedProcedure.query(async ({ ctx }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageEscalations"); return db.listEscalationRules(); }),
+    saveEscalationRule: protectedProcedure.input(escalationRuleInput).mutation(async ({ ctx, input }) => { await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageEscalations"); const policy = await db.getSlaPolicy(input.priority); if (!policy) throw new Error(`Configure an approved ${input.priority} SLA target before defining its escalation rule`); if (input.thresholdMinutes > policy.targetHours * 60) throw new Error("The escalation threshold must be within the approved SLA target window"); return db.saveEscalationRule(input); }),
   }),
   maintenance: router({
     list: protectedProcedure.query(async ({ ctx }) => { const profile = await operationalProfile(ctx.user.id, ctx.user.role === "admin"); return db.listRequestsForRole(ctx.user.id, profile.operationalRole, ctx.user.role === "admin"); }),
@@ -69,7 +76,7 @@ export const appRouter = router({
       return { success: true };
     }),
     assign: protectedProcedure.input(z.object({ id: z.number(), team, assigneeName: z.string().max(160).optional(), assigneeUserId: z.number().optional() })).mutation(async ({ ctx, input }) => {
-      await requireAdministrator(ctx.user.id, ctx.user.role === "admin");
+      await requirePermission(ctx.user.id, ctx.user.role === "admin", "manageRequests");
       if (input.assigneeUserId) { const assignee = await operationalProfile(input.assigneeUserId, false); const compatible = (input.team === "ICT" && assignee.operationalRole === "ict") || (input.team === "Physical Maintenance" && assignee.operationalRole === "maintenance") || (input.team === "Security" && assignee.operationalRole === "security"); if (!compatible) throw new Error("The selected assignee does not have a matching operational role"); }
       await db.updateRequest(input.id, { team: input.team, assigneeName: input.assigneeName, assigneeUserId: input.assigneeUserId, status: "Assigned" });
       await db.addUpdate(input.id, ctx.user.id, `Assigned to ${input.team}`, input.assigneeName ? `Assigned to ${input.assigneeName}.` : undefined);
@@ -92,7 +99,7 @@ export const appRouter = router({
   }),
   analytics: router({
     overview: protectedProcedure.query(async ({ ctx }) => {
-      await requireAdministrator(ctx.user.id, ctx.user.role === "admin");
+      await requirePermission(ctx.user.id, ctx.user.role === "admin", "viewAnalytics");
       const requests = await db.listRequestsForRole(ctx.user.id, "administrator", true);
       return computeAdminAnalytics(requests.map((item) => ({
         id: item.reference,

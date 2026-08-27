@@ -65,3 +65,8 @@
 - [x] Add administrator controls for staff role assignment, technician assignment, and verified campus locations.
 - [x] Harden authenticated data loading, mutation failures, empty states, and production fallback behavior.
 - [x] Validate the production-readiness upgrade across protected backend and responsive application workflows.
+- [x] Audit existing administrator role controls and define a persistent permission and escalation-policy model.
+- [x] Add protected backend persistence for staff permissions and SLA escalation rules.
+- [x] Build an administrator dashboard for initial staff-role assignment and permission management.
+- [x] Build an administrator configuration panel for SLA targets and escalation-rule management.
+- [x] Validate administrator authorization, configuration persistence, and responsive management workflows.

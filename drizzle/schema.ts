@@ -80,6 +80,27 @@ export const campusSlaPolicies = mysqlTable("campus_sla_policies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const campusStaffPermissions = mysqlTable("campus_staff_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  manageUsers: boolean("manageUsers").default(false).notNull(),
+  manageRequests: boolean("manageRequests").default(false).notNull(),
+  manageLocations: boolean("manageLocations").default(false).notNull(),
+  manageServiceLevels: boolean("manageServiceLevels").default(false).notNull(),
+  manageEscalations: boolean("manageEscalations").default(false).notNull(),
+  viewAnalytics: boolean("viewAnalytics").default(false).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const campusEscalationRules = mysqlTable("campus_escalation_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  priority: varchar("priority", { length: 16 }).notNull().unique(),
+  thresholdMinutes: int("thresholdMinutes").notNull(),
+  notifyRole: varchar("notifyRole", { length: 32 }).notNull(),
+  active: boolean("active").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type MaintenanceRequestRecord = typeof maintenanceRequests.$inferSelect;
@@ -89,3 +110,5 @@ export type CampusUserProfile = typeof campusUserProfiles.$inferSelect;
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type CampusBuilding = typeof campusBuildings.$inferSelect;
 export type CampusSlaPolicy = typeof campusSlaPolicies.$inferSelect;
+export type CampusStaffPermission = typeof campusStaffPermissions.$inferSelect;
+export type CampusEscalationRule = typeof campusEscalationRules.$inferSelect;
